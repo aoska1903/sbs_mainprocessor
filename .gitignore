@@ -1,0 +1,11 @@
+*.exe
+*.sdf
+*.aps
+*.swp
+*.bak
+ipch/
+Release/
+Debug/
+Thumbs.db
+ehthumbs.db
+
