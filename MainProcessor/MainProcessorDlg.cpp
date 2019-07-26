@@ -6,7 +6,7 @@
 #include "MainProcessor.h"
 #include "MainProcessorDlg.h"
 #include "afxdialogex.h"
-
+//#include "sqlite3.h"
 #ifdef _DEBUG
 #define new DEBUG_NEW
 #endif
@@ -37,8 +37,8 @@ BEGIN_MESSAGE_MAP(CMainProcessorDlg, CDialogEx)
 	ON_WM_PAINT()
 	ON_WM_QUERYDRAGICON()
 	ON_WM_DESTROY()
+	ON_BN_CLICKED(IDC_BUTTON_CHECK, &CMainProcessorDlg::OnBnClickedButtonCheck)
 END_MESSAGE_MAP()
-
 
 // CMainProcessorDlg 메시지 처리기
 
@@ -183,7 +183,7 @@ void CMainProcessorDlg::Bill_Shutter_Open_Result(int Shutter_Result)//지폐 셔터 
 	m_logwriter->now_write_log.Format(_T("지폐 프로세서에게 셧터 열기 결과 수신 완료 (결과 : %d)"), Bill_Shutter_Open);
 	m_logwriter->WriteLogFile(m_logwriter->now_write_log);//LOG 기록
 	if(Coin_Shutter_Open&&Bill_Shutter_Open){//코인도 열기 성공시
-		m_logwriter->now_write_log.Format(_T("p_data->Transtion_Ready : %d (1.준비완료 0.준비미완료)"), m_mainmmap->MMap_Transtion_Ready_Change(TRUE));//MMAp투입을 TRUE로
+		m_logwriter->now_write_log.Format(_T("p_data->Transation_Ready : %d (1.준비완료 0.준비미완료)"), m_mainmmap->MMap_Transation_Ready_Change(TRUE));//MMAp투입을 TRUE로
 		m_logwriter->WriteLogFile(m_logwriter->now_write_log);//LOG 기록
 	}
 }
@@ -194,7 +194,7 @@ void CMainProcessorDlg::Coin_Shutter_Open_Result(int Shutter_Result)//동전 셔터 
 	m_logwriter->now_write_log.Format(_T("동전 프로세서에게 셧터 열기 결과 수신 완료 (결과 : %d)"), Coin_Shutter_Open);
 	m_logwriter->WriteLogFile(m_logwriter->now_write_log);//LOG 기록
 	if(Coin_Shutter_Open&&Bill_Shutter_Open){//지폐도 열기 성공시
-		m_logwriter->now_write_log.Format(_T("p_data->Transtion_Ready : %d (1.준비완료 0.준비미완료)"), m_mainmmap->MMap_Transtion_Ready_Change(TRUE));//MMAp투입을 TRUE로
+		m_logwriter->now_write_log.Format(_T("p_data->Transation_Ready : %d (1.준비완료 0.준비미완료)"), m_mainmmap->MMap_Transation_Ready_Change(TRUE));//MMAp투입을 TRUE로
 		m_logwriter->WriteLogFile(m_logwriter->now_write_log);//LOG 기록
 	}
 }
@@ -230,14 +230,14 @@ INT CMainProcessorDlg::Insert_Coin(int fare)//동전투입
 	return 0;
 }
 
-void CMainProcessorDlg::Trasation_Cancel(int now_image_state)//거래중 취소 눌렀을 시 투입금0 셔터, 거래상태 거래X상태로 변경
+void CMainProcessorDlg::Transation_Cancel(int now_image_state)//거래중 취소 눌렀을 시 투입금0 셔터, 거래상태 거래X상태로 변경
 {
 	if(now_image_state >= recharge){//현재상태가 보충 진행중일때	
 		Card_Disabled();//카드 비활성화 지시
 	}
 	Shutter_Clsoe();//해당 거래 금액 투입을 위한 동전, 지폐에게 셔터 닫기 지시
 	m_mainmmap->init_insert(now_image_state);//투입금 초기화 함수
-	m_logwriter->now_write_log.Format(_T("금액 투입 상태 : %d (1.준비완료 2.준비미완료)"), m_mainmmap->MMap_Transtion_Ready_Change(Transation_None));//MMAp거래상태 Transation_None로
+	m_logwriter->now_write_log.Format(_T("금액 투입 상태 : %d (1.준비완료 2.준비미완료)"), m_mainmmap->MMap_Transation_Ready_Change(Transation_None));//MMAp거래상태 Transation_None로
 	m_logwriter->WriteLogFile(m_logwriter->now_write_log);//LOG 기록
 	Coin_Shutter_Open = 0;
 	Bill_Shutter_Open = 0; 
@@ -279,7 +279,7 @@ afx_msg LRESULT CMainProcessorDlg::COIN_Main_Message(WPARAM wParam, LPARAM lPara
 	{
 		case cardsale_insert :
 		case recharge_insert :
-			if(m_mainmmap->MMap_Check_Transtion_Ready() == TRUE){//거래 준비 상태일 때
+			if(m_mainmmap->MMap_Check_Transation_Ready() == TRUE){//거래 준비 상태일 때
 				Insert_Coin(lParam);//지폐투입//lParam 투입 금액
 			}
 			else{//거래 준비 상태 아닐 때
@@ -298,7 +298,7 @@ afx_msg LRESULT CMainProcessorDlg::BILL_Main_Message(WPARAM wParam, LPARAM lPara
 	{
 		case cardsale_insert :
 		case recharge_insert :
-			if(m_mainmmap->MMap_Check_Transtion_Ready() == TRUE){//거래 준비 상태일 때
+			if(m_mainmmap->MMap_Check_Transation_Ready() == TRUE){//거래 준비 상태일 때
 				Insert_Bill(lParam);//지폐투입//lParam 투입 금액
 			}
 			else{//거래 준비 상태 아닐 때
@@ -322,7 +322,7 @@ afx_msg LRESULT CMainProcessorDlg::IMAGE_Main_Message(WPARAM wParam, LPARAM lPar
 	switch (wParam)//현재 상태값에따라
 	{
 		case main://메인 아닌 상태에서 취소 버튼을 선택하였을때
-			Trasation_Cancel(image_state);//거래중 취소 눌렀을 시 투입금0 셔터, 거래상태 거래X상태로 변경
+			Transation_Cancel(image_state);//거래중 취소 눌렀을 시 투입금0 셔터, 거래상태 거래X상태로 변경
 			//투입금액 초기화하는함수
 			Processor_State_Change(main);
 			break;
@@ -339,6 +339,7 @@ afx_msg LRESULT CMainProcessorDlg::IMAGE_Main_Message(WPARAM wParam, LPARAM lPar
 			break;
 		case cardsale_processing :
 			Processor_State_Change(cardsale_processing);
+			Transation_Create(cardsale_processing);//거래 생성 함수
 			break;
 		case cardsale_lack :
 			Processor_State_Change(cardsale_lack);
@@ -355,6 +356,7 @@ afx_msg LRESULT CMainProcessorDlg::IMAGE_Main_Message(WPARAM wParam, LPARAM lPar
 			break;
 		case recharge_processing : 
 			Processor_State_Change(recharge_processing);
+			Transation_Create(recharge_processing);//거래 생성 함수
 			break;
 		case recharge_lack :
 			Processor_State_Change(recharge_lack);
@@ -394,3 +396,41 @@ afx_msg LRESULT CMainProcessorDlg::RF_Main_Message(WPARAM wParam, LPARAM lParam)
 	}
 	return 0;
 }
+
+int CMainProcessorDlg::Transation_Create(int now_state)//거래 생성 함수
+{
+	// TODO: 여기에 컨트롤 알림 처리기 코드를 추가합니다.
+	if(m_mainmmap->MMap_Transation_Create())//거래 생성 함수//test중 DB생성
+	{
+		Sleep(TRANSATION_WAIT_TIME);
+		if(now_state == cardsale_processing){
+			Processor_State_Change(cardsale_success);
+		}
+		else if(now_state == recharge_processing){
+			Processor_State_Change(recharge_success);
+		}
+	}
+	return TRUE;
+}
+
+void CMainProcessorDlg::OnBnClickedButtonCheck()
+{
+	m_logwriter->WriteLogFile(_T("OnBnClickedButtonCheck"));//LOG 기록
+
+	m_logwriter->now_write_log.Format(_T("Now_State : %d"), m_mainmmap->m_pData->Now_State);
+	m_logwriter->WriteLogFile(_T(m_logwriter->now_write_log));//LOG 기록
+}
+
+int CMainProcessorDlg::callback(void *NotUsed, int argc, char **argv, char **azColName) {
+	int i;
+	CString text;
+	for (i = 0; i< argc; i++) {
+		 printf("%s = %s\n", azColName[i], argv[i] ? argv[i] : "NULL");
+		 text.Format("%s = %s\n", azColName[i], argv[i] ? argv[i] : "NULL");
+		 AfxMessageBox(text);
+	}
+	printf("\n");
+	return 0;
+}
+
+

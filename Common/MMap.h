@@ -56,7 +56,7 @@ typedef struct
 	Number_of_Cardsale			number_of_cardsale;			//구매할 카드 개수
 	Infomation_Traffic_Card		infomation_traffic_card;	//충전할 카드 정보
 	INT							Now_State;					//현재상태
-	BOOL						Transtion_Ready;			//거래상태 1(준비완료) 0(준비미완료)
+	BOOL						Transation_Ready;			//거래상태 1(준비완료) 0(준비미완료)
 	INT							Recharge_Fare;				//충전 금액
 	INT							Cardsale_Fare;				//카드 판매 (총)금액
 }T_RECHARGE_DATA;//MMap 보충 충전 데이터

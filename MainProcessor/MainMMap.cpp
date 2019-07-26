@@ -7,6 +7,9 @@ CMainMMap::CMainMMap()
 	m_logwriter->Log_Make(_T("MainMMap"), _T("03_MainMMap"));//로그 생성 함수
 	CreateMemoryMAP();//공유 메모리 생성 함수
 	OpenMemoryMAP();//메모리맵 읽는 함수
+	db_path = _T("aoska3.db3");//DB 경로
+	zErrMsg = 0;
+	DB_Table_Create();//DB 및 table 생성 함수
 }
 
 CMainMMap::~CMainMMap()
@@ -16,6 +19,32 @@ CMainMMap::~CMainMMap()
 	if (m_logwriter != NULL){
 		AfxMessageBox(_T("m_logwriter소멸 실패(MainMMap)"));
 	}
+}
+
+INT CMainMMap::DB_Table_Create()//DB 및 table 생성 함수
+{
+	rc = sqlite3_open(LPSTR(LPCTSTR(db_path)), &db);//DB 열기
+	if(rc != SQLITE_OK){
+		m_logwriter->now_write_log.Format(_T("%s open fail , SQL error: %s"), db_path, zErrMsg);
+		m_logwriter->WriteLogFile(m_logwriter->now_write_log);//LOG 기록
+		sqlite3_free(zErrMsg);
+	}
+	zErrMsg = 0;
+	sql_query.Format(_T("create table aoska (transationumber INTEGER RRIMARY KEY NOT NULL, cardnumber INTEGER );"));
+	rc = sqlite3_exec(db, sql_query, callback, 0, &zErrMsg);//Query문 실행
+
+	if(rc != SQLITE_OK){
+		m_logwriter->now_write_log.Format(_T("SQL error: %s"), zErrMsg);
+		m_logwriter->WriteLogFile(m_logwriter->now_write_log);//LOG 기록
+		sqlite3_free(zErrMsg);
+	}
+	rc = sqlite3_close(db);   //DB 닫기
+	if (SQLITE_OK!=rc) {
+		m_logwriter->WriteLogFile(_T("sqlite3_close error"));//LOG 기록
+		//MessageBox("sqlite3_close error",sqlite3_errmsg(db),MB_ICONSTOP);
+		return false;
+	}
+	return TRUE;
 }
 
 void CMainMMap::Shutter_Open()//셔터 열기 상태 전환
@@ -151,14 +180,14 @@ BOOL CMainMMap::init_insert(int now_image_state)//투입 관련 초기화하는 함수
 	return TRUE;
 }
 
-BOOL CMainMMap::MMap_Transtion_Ready_Change(int Ready_Flag)//현재 Transation Ready  상태 바꾸기
+BOOL CMainMMap::MMap_Transation_Ready_Change(int Ready_Flag)//현재 Transation Ready  상태 바꾸기
 {
-	m_logwriter->WriteLogFile(_T("MMap_Transtion_Ready_Change 시작"));//LOG 기록
+	m_logwriter->WriteLogFile(_T("MMap_Transation_Ready_Change 시작"));//LOG 기록
 	pMemoryMap = ::MapViewOfFile(hMemoryMap, FILE_MAP_WRITE, 0, 0, 0);
 	T_RECHARGE_DATA *p_data = static_cast<T_RECHARGE_DATA*>(pMemoryMap);
-	p_data->Transtion_Ready = Ready_Flag;//지정한 매개변수로 변경
+	p_data->Transation_Ready = Ready_Flag;//지정한 매개변수로 변경
 	WriteMMF(p_data);//메모리 맵 쓰기
-	return p_data->Transtion_Ready;//변화한 트랜잭션 반환
+	return p_data->Transation_Ready;//변화한 트랜잭션 반환
 }
 
 INT CMainMMap::MMap_Write_CardInfo(int kind_of_card)//RF에게 받은 카드 기록 MM에 남기기
@@ -169,6 +198,47 @@ INT CMainMMap::MMap_Write_CardInfo(int kind_of_card)//RF에게 받은 카드 기록 MM에
 	p_data->infomation_traffic_card.Kind_of_Card = kind_of_card;//지정한 매개변수로 변경
 	WriteMMF(p_data);//메모리 맵 쓰기
 	return p_data->infomation_traffic_card.Kind_of_Card;//변화한 카드종류 반환
+}
+
+INT CMainMMap::MMap_Transation_Create()//거래 생성 함수
+{
+	m_logwriter->WriteLogFile(_T("MMap_Transation_Create 시작"));//LOG 기록
+	pMemoryMap = ::MapViewOfFile(hMemoryMap, FILE_MAP_WRITE, 0, 0, 0);
+	T_RECHARGE_DATA *p_data = static_cast<T_RECHARGE_DATA*>(pMemoryMap);
+	ReadMMF(p_data);//메모리 맵 읽기
+
+	rc = sqlite3_open(LPSTR(LPCTSTR(db_path)), &db);//DB 열기
+	if(rc != SQLITE_OK){
+		m_logwriter->now_write_log.Format(_T("%s open fail , SQL error: %s"), db_path, zErrMsg);
+		m_logwriter->WriteLogFile(m_logwriter->now_write_log);//LOG 기록
+		sqlite3_free(zErrMsg);
+	}
+	char *zErrMsg = 0;
+
+	//실제 거래 생성
+	sql_query.Format(_T("insert INTO aoska values (%d, %d);"), p_data->Now_State, p_data->insert_amount.Insert_Bill_SUM);
+	rc = sqlite3_exec(db, sql_query, callback, 0, &zErrMsg);//Query문 실행
+
+	if(rc != SQLITE_OK){
+		m_logwriter->now_write_log.Format(_T("SQL error: %s"), zErrMsg);
+		m_logwriter->WriteLogFile(m_logwriter->now_write_log);//LOG 기록
+		sqlite3_free(zErrMsg);
+	}
+
+	//sqlite3_free_table(pzErrmsg);
+	if (SQLITE_OK!=rc) {
+		m_logwriter->WriteLogFile(_T("sqlite3_free_table error"));//LOG 기록
+		//MessageBox("sqlite3_open error",sqlite3_errmsg(db),MB_ICONSTOP);
+		return false;
+	} 
+	rc = sqlite3_close(db);   //DB 닫기
+	if (SQLITE_OK!=rc) {
+		m_logwriter->WriteLogFile(_T("sqlite3_close error"));//LOG 기록
+		//MessageBox("sqlite3_close error",sqlite3_errmsg(db),MB_ICONSTOP);
+		return false;
+	}
+
+	return 1;
 }
 
 BOOL CMainMMap::OpenMemoryMAP()//메모리맵 읽는 함수
@@ -199,3 +269,14 @@ BOOL CMainMMap::OpenMemoryMAP()//메모리맵 읽는 함수
 	return TRUE;
 }
 
+int CMainMMap::callback(void *NotUsed, int argc, char **argv, char **azColName) {//콜백함수
+	int i;
+	CString text;
+	for (i = 0; i< argc; i++) {
+		 printf("%s = %s\n", azColName[i], argv[i] ? argv[i] : "NULL");
+		 text.Format("%s = %s\n", azColName[i], argv[i] ? argv[i] : "NULL");
+		 AfxMessageBox(text);
+	}
+	printf("\n");
+	return 0;
+}

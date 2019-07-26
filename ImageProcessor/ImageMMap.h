@@ -43,7 +43,7 @@ public:
 		pMemoryMap = ::MapViewOfFile(hMemoryMap, FILE_MAP_READ, 0, 0, 0);
 		T_RECHARGE_DATA *p_data = static_cast<T_RECHARGE_DATA*>(pMemoryMap);
 		ReadMMF(p_data);//메모리 맵 읽기
-		return p_data->Transtion_Ready;//현재의 트랜잭션 반환
+		return p_data->Transation_Ready;//현재의 트랜잭션 반환
 	}
 
 	int MMap_Now_InsertMoney()//현재 투입금 확인

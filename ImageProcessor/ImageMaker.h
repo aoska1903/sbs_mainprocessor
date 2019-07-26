@@ -4,8 +4,10 @@
 #include <psapi.h>
 #include <tlhelp32.h>
 
-#define VERSION _T("version : 2019062501")
-
+#define VERSION _T("version : 2019071702")
+//check
+//branch
+//merge
 enum Image_Name_enum{//사진 컨트롤 열거번호 Resource1000~
 	  picture_main																			//메인 화면
 	, picture_cardsale																		//카드 판매 금액 선택 화면

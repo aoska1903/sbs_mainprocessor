@@ -25,9 +25,7 @@ void CLogWriter::Log_Make(CString WriterName, CString FolderName)//로그 생성 함�
 void CLogWriter::CreateLogFolder(){//로그 폴더 생성
 	GetLocalTime(&cur_time);//현재시간 가져오기
 	Now_Date = (cur_time.wYear * 10000) + (cur_time.wMonth * 100) + cur_time.wDay;//시작 시간 변경
-
-	Date_Folder_Name.Format(_T("%04d%02d%02d")
-		, cur_time.wYear, cur_time.wMonth, cur_time.wDay);//날짜 이름 폴더
+	Date_Folder_Name.Format(_T("%04d%02d%02d"), cur_time.wYear, cur_time.wMonth, cur_time.wDay);//날짜 이름 폴더
 	Date_Folder_Name.Format(_T("C:\\SBS\\Log\\%s\\%s"), Date_Folder_Name, Module_Log_FolderName);//Log/날짜이름폴더 생성
 	CreateFolder(Date_Folder_Name);
 }
